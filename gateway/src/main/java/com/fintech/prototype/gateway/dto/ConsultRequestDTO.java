@@ -1,18 +1,10 @@
 package com.fintech.prototype.gateway.dto;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
 
-@Data
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
-public class ConsultRequestDTO extends BaseConsultRequest {
-
-    private String agency;
-
-    private String account;
-
+public record ConsultRequestDTO(
+        @NotBlank String identifier,
+        @NotBlank String agency,
+        @NotBlank String account
+) {
 }

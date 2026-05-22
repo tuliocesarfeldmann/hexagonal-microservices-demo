@@ -62,11 +62,31 @@
          "durable":true,
          "auto_delete":false,
          "arguments":{
-            "x-queue-type":"classic"
+            "x-queue-type":"classic",
+            "x-dead-letter-exchange":"exchange-consult-rabbit-dlx"
          }
       },
 	  {
          "name":"queue-cash-withdrawal-rabbit",
+         "vhost":"/",
+         "durable":true,
+         "auto_delete":false,
+         "arguments":{
+            "x-queue-type":"classic",
+            "x-dead-letter-exchange":"exchange-cash-withdrawal-rabbit-dlx"
+         }
+      },
+	  {
+         "name":"queue-consult-rabbit-dlq",
+         "vhost":"/",
+         "durable":true,
+         "auto_delete":false,
+         "arguments":{
+            "x-queue-type":"classic"
+         }
+      },
+	  {
+         "name":"queue-cash-withdrawal-rabbit-dlq",
          "vhost":"/",
          "durable":true,
          "auto_delete":false,
@@ -97,6 +117,28 @@
          "arguments":{
             
          }
+      },
+	  {
+         "name":"exchange-consult-rabbit-dlx",
+         "vhost":"/",
+         "type":"direct",
+         "durable":true,
+         "auto_delete":false,
+         "internal":false,
+         "arguments":{
+            
+         }
+      },
+	  {
+         "name":"exchange-cash-withdrawal-rabbit-dlx",
+         "vhost":"/",
+         "type":"direct",
+         "durable":true,
+         "auto_delete":false,
+         "internal":false,
+         "arguments":{
+            
+         }
       }
    ],
    "bindings":[
@@ -114,6 +156,26 @@
          "source":"exchange-cash-withdrawal-rabbit",
          "vhost":"/",
          "destination":"queue-cash-withdrawal-rabbit",
+         "destination_type":"queue",
+         "routing_key":"",
+         "arguments":{
+            
+         }
+      },
+	  {
+         "source":"exchange-consult-rabbit-dlx",
+         "vhost":"/",
+         "destination":"queue-consult-rabbit-dlq",
+         "destination_type":"queue",
+         "routing_key":"",
+         "arguments":{
+            
+         }
+      },
+	  {
+         "source":"exchange-cash-withdrawal-rabbit-dlx",
+         "vhost":"/",
+         "destination":"queue-cash-withdrawal-rabbit-dlq",
          "destination_type":"queue",
          "routing_key":"",
          "arguments":{
