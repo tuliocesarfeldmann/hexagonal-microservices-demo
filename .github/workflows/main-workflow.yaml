@@ -32,7 +32,9 @@ jobs:
 
       - name: Run tests
         working-directory: ${{ matrix.service }}
-        run: ./mvnw test
+        run: |
+          chmod +x ./mvnw
+          ./mvnw test
 
   docker-build:
     name: Docker build ${{ matrix.service }}
@@ -52,6 +54,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        if: contains(fromJson('["gateway", "consulta", "saque"]'), matrix.service)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Package Spring service
+        if: contains(fromJson('["gateway", "consulta", "saque"]'), matrix.service)
+        working-directory: ${{ matrix.service }}
+        run: |
+          chmod +x ./mvnw
+          ./mvnw package -DskipTests
 
       - name: Build image
         uses: docker/build-push-action@v6
