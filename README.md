@@ -1,10 +1,10 @@
-# Sistema de Microsservicos Financeiro
+# Financial Microservices System
 
-Protótipo de backend financeiro distribuido para simular consulta e solicitacao de saque. O apresenta uma arquitetura hexagonal, separacao de responsabilidades, mensageria com RabbitMQ, cache/estado temporario com Redis, correlacao de requisicoes, idempotencia e testes unitarios de casos de uso.
+Distributed financial backend prototype that simulates account consult and withdrawal requests. The project demonstrates hexagonal architecture, responsibility separation, RabbitMQ messaging, temporary Redis state, request correlation, idempotency, and unit tests for application use cases.
 
 ## Stack
 
-- Java 21
+- Java 21 LTS
 - Spring Boot 3.5.x
 - Spring Web
 - Spring AMQP
@@ -14,58 +14,58 @@ Protótipo de backend financeiro distribuido para simular consulta e solicitacao
 - RabbitMQ
 - Redis
 - Docker Compose
-- JUnit 5 e AssertJ
+- JUnit 5 and AssertJ
 
-## Servicos
+## Services
 
 ```text
 .
-├── consulta   # consumidor RabbitMQ que processa consultas e salva sessoes no Redis
-├── saque      # consumidor RabbitMQ que valida sessoes e processa saques
-├── gateway    # API HTTP publica e cliente request/reply para RabbitMQ
-├── redis      # armazenamento temporario e idempotencia
-└── rabbitmq   # broker, exchanges, filas e DLQs
+├── consult     # RabbitMQ consumer that processes consult requests and stores sessions in Redis
+├── withdrawal  # RabbitMQ consumer that validates sessions and processes withdrawals
+├── gateway     # public HTTP API and RabbitMQ request/reply client
+├── redis       # temporary storage and idempotency
+└── rabbitmq    # broker, exchanges, queues, and DLQs
 ```
 
-## Arquitetura
+## Architecture
 
-Os servicos Spring Boot foram organizados em camadas inspiradas em Clean Architecture e Hexagonal Architecture. No gateway, a integracao com RabbitMQ tambem fica atras de uma porta de saida, implementada por um adapter de mensageria.
+The Spring Boot services are organized in layers inspired by Clean Architecture and Hexagonal Architecture. In the gateway, the RabbitMQ integration is also behind an outbound port implemented by a messaging adapter.
 
 ```text
-domain       # modelo e regras de negocio sem dependencia de framework
-application  # casos de uso, comandos, resultados e portas
-adapter/in   # entrada HTTP ou RabbitMQ
-adapter/out  # Redis, RabbitMQ e outras integracoes
-config       # configuracoes Spring
+domain       # model and business rules without framework dependencies
+application  # use cases, commands, results, and ports
+adapter/in   # HTTP or RabbitMQ input
+adapter/out  # Redis, RabbitMQ, and other integrations
+config       # Spring configuration
 ```
 
-Essa organizacao deixa o dominio testavel sem infraestrutura e evita que controllers/listeners concentrem regra de negocio.
+This organization keeps the domain testable without infrastructure and prevents controllers/listeners from concentrating business rules.
 
-## Fluxo
+## Flow
 
-1. `POST /consult` recebe `identifier`, `agency` e `account`.
-2. O gateway cria ou propaga `Correlation-Id` e publica em `exchange-consult-rabbit`.
-3. O servico `consulta` consome `queue-consult-rabbit`, cria uma sessao aprovada e salva no Redis.
-4. O gateway recebe a resposta em uma fila temporaria `reply-consult-rabbit-{identifier}`.
-5. `POST /{identifier}/cash-withdrawal` recebe `amount` e `password`.
-6. O gateway publica em `exchange-cash-withdrawal-rabbit`, propagando `Correlation-Id` e o `Idempotency-Key` obrigatorio.
-7. O servico `saque` valida a sessao no Redis, reserva a chave de idempotencia e retorna o saque aprovado.
+1. `POST /consult` receives `identifier`, `agency`, and `account`.
+2. The gateway creates or propagates `Correlation-Id` and publishes to `exchange-consult-rabbit`.
+3. The `consult` service consumes `queue-consult-rabbit`, creates an approved session, and stores it in Redis.
+4. The gateway receives the response in a temporary queue named `reply-consult-rabbit-{identifier}`.
+5. `POST /{identifier}/cash-withdrawal` receives `amount` and `password`.
+6. The gateway publishes to `exchange-cash-withdrawal-rabbit`, propagating `Correlation-Id` and the required `Idempotency-Key`.
+7. The `withdrawal` service validates the session in Redis, reserves the idempotency key, and returns the approved withdrawal.
 
-## Robustez adicionada
+## Added Robustness
 
-- Java 21 e Spring Boot 3.5.x.
-- DTOs HTTP com Bean Validation.
-- Controllers REST com tratamento centralizado de erro.
-- `Correlation-Id` propagado entre HTTP e RabbitMQ.
-- `Idempotency-Key` obrigatorio no fluxo de saque.
-- Redis isolado atras de ports de saida.
-- Controllers e listeners isolados como adapters de entrada.
-- Integracoes com RabbitMQ e Redis isoladas como adapters de saida atras de ports.
-- DLQs para consulta e saque no RabbitMQ.
-- Actuator habilitado para health, info e metricas.
-- Testes unitarios dos casos de uso sem depender de Redis/RabbitMQ.
+- Java 21 and Spring Boot 3.5.x.
+- HTTP DTOs with Bean Validation.
+- REST controllers with centralized error handling.
+- `Correlation-Id` propagated between HTTP and RabbitMQ.
+- Required `Idempotency-Key` in the withdrawal flow.
+- Redis isolated behind outbound ports.
+- Controllers and listeners isolated as input adapters.
+- RabbitMQ and Redis integrations isolated as outbound adapters behind ports.
+- DLQs for consult and withdrawal in RabbitMQ.
+- Actuator enabled for health, info, and metrics.
+- Unit tests for use cases without requiring Redis/RabbitMQ.
 
-## Execucao
+## Running
 
 ```bash
 docker-compose up -d
@@ -74,11 +74,11 @@ docker-compose up -d
 Endpoints:
 
 - `POST http://localhost:9991/consult`
-- `POST http://localhost:9991/{identifier}/cash-withdrawal` com header obrigatorio `Idempotency-Key`
-- Swagger UI do gateway: `http://localhost:9991/swagger-ui.html`
+- `POST http://localhost:9991/{identifier}/cash-withdrawal` with required `Idempotency-Key` header
+- Gateway Swagger UI: `http://localhost:9991/swagger-ui.html`
 - RabbitMQ Management: `http://localhost:15672`
 
-Exemplo de consulta:
+Consult example:
 
 ```bash
 curl -X POST http://localhost:9991/consult \
@@ -87,7 +87,7 @@ curl -X POST http://localhost:9991/consult \
   -d "{\"identifier\":\"abc-123\",\"agency\":\"0001\",\"account\":\"12345-6\"}"
 ```
 
-Exemplo de saque:
+Withdrawal example:
 
 ```bash
 curl -X POST http://localhost:9991/abc-123/cash-withdrawal \
@@ -97,10 +97,10 @@ curl -X POST http://localhost:9991/abc-123/cash-withdrawal \
   -d "{\"amount\":100.00,\"password\":\"1234\"}"
 ```
 
-## Testes
+## Tests
 
 ```bash
 cd gateway && ./mvnw test
-cd ../consulta && ./mvnw test
-cd ../saque && ./mvnw test
+cd ../consult && ./mvnw test
+cd ../withdrawal && ./mvnw test
 ```

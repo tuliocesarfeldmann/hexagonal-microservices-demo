@@ -1,7 +1,9 @@
 services:
-  rabbitmq-mensageria:
-    image: tulioufsm/projeto-sid:rabbitmq-mensageria-1.0.0
-    container_name: rabbitmq-mensageria
+  rabbitmq-broker:
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile
+    container_name: rabbitmq-broker
     environment:
       RABBIT_DEFINITIONS: rabbit_definitions.json
     ports:
@@ -9,55 +11,63 @@ services:
       - "5672:5672"
 
   redis-service:
-    image: tulioufsm/projeto-sid:redis-1.0.0
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
     container_name: redis-service
     ports:
       - "6379:6379"
 
   gateway:
-    image: tulioufsm/projeto-sid:gateway-1.0.0
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
     container_name: gateway
     environment:
-      SPRING_RABBITMQ_HOST: rabbitmq-mensageria
+      SPRING_RABBITMQ_HOST: rabbitmq-broker
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: guest
       SPRING_RABBITMQ_PASSWORD: guest
     depends_on:
-      - rabbitmq-mensageria
+      - rabbitmq-broker
       - redis-service
     ports:
       - "9991:9991"
 
-  consulta:
-    image: tulioufsm/projeto-sid:consulta-1.0.0
-    container_name: consulta
+  consult:
+    build:
+      context: ./consult
+      dockerfile: Dockerfile
+    container_name: consult
     environment:
-      SPRING_RABBITMQ_HOST: rabbitmq-mensageria
+      SPRING_RABBITMQ_HOST: rabbitmq-broker
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: guest
       SPRING_RABBITMQ_PASSWORD: guest
       SPRING_DATA_REDIS_HOST: redis-service
       SPRING_DATA_REDIS_PORT: 6379
-      SPRING_DATA_REDIS_PASSWORD: trabalho_sid
+      SPRING_DATA_REDIS_PASSWORD: sid_project
     depends_on:
-      - rabbitmq-mensageria
+      - rabbitmq-broker
       - redis-service
     ports:
       - "9992:9992"
 
-  saque:
-    image: tulioufsm/projeto-sid:saque-1.0.0
-    container_name: saque
+  withdrawal:
+    build:
+      context: ./withdrawal
+      dockerfile: Dockerfile
+    container_name: withdrawal
     environment:
-      SPRING_RABBITMQ_HOST: rabbitmq-mensageria
+      SPRING_RABBITMQ_HOST: rabbitmq-broker
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: guest
       SPRING_RABBITMQ_PASSWORD: guest
       SPRING_DATA_REDIS_HOST: redis-service
       SPRING_DATA_REDIS_PORT: 6379
-      SPRING_DATA_REDIS_PASSWORD: trabalho_sid
+      SPRING_DATA_REDIS_PASSWORD: sid_project
     depends_on:
-      - rabbitmq-mensageria
+      - rabbitmq-broker
       - redis-service
     ports:
       - "9993:9993"
